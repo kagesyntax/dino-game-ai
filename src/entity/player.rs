@@ -20,7 +20,10 @@ impl Player {
     }
 
     pub fn update(&mut self, dt: f32) {
-        self.update_with_jump(dt, is_key_pressed(KeyCode::Space));
+        self.update_with_jump(
+            dt,
+            is_key_pressed(KeyCode::Space) || is_key_pressed(KeyCode::Up),
+        );
     }
 
     pub fn update_with_jump(&mut self, dt: f32, jump: bool) {

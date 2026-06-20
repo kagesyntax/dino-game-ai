@@ -54,7 +54,7 @@ async fn main() {
     let mut world_enemies: Option<Enemies> = None;
     let mut deaths_this_gen: usize = 0;
     let mut show_gen_ended: f32 = 0.0;
-    let mut world_best_score: u32 = 0;
+    let mut world_best_score: u128 = 0;
     let mut saved_ai_brain: Option<Vec<f32>> = ai::DinoNet::<ai::B>::load_weights(WEIGHTS_FILE);
 
     // Human vs AI state
@@ -105,7 +105,11 @@ async fn main() {
                     screen = Screen::HumanPlay;
                 }
                 if is_key_pressed(KeyCode::Key2) {
-                    ga = Some(GeneticAlgorithm::new());
+                    ga = Some(if let Some(ref brain) = saved_ai_brain {
+                        GeneticAlgorithm::from_brain(brain)
+                    } else {
+                        GeneticAlgorithm::new()
+                    });
                     world_agents.clear();
                     world_best_score = 0;
                     deaths_this_gen = 0;
@@ -218,7 +222,7 @@ async fn main() {
                         .max()
                         .unwrap_or(1)
                         .max(1);
-                    let gs = (7.0 + max_score as f32 / 100.0).min(17.0);
+                    let gs = (7.0 + max_score as f32 / 100.0).min(17.);
                     let gs_px = gs * 60.0;
                     enemies.update(dt, gs_px);
 
@@ -229,7 +233,7 @@ async fn main() {
                             agent.y,
                             agent.vy,
                             agent.on_ground,
-                            agent.score,
+                            agent.score.try_into().unwrap(),
                             enemies,
                         );
                         let jump = agent.network.predict(&feats);
@@ -255,7 +259,7 @@ async fn main() {
                             constants::PLAYER_SIZE.0 - 10.,
                             constants::PLAYER_SIZE.1 - 10.,
                         );
-                        if enemies.check_collision(&ar) || agent.score >= 5000 {
+                        if enemies.check_collision(&ar) || agent.score == u128::MAX {
                             agent.alive = false;
                             agent.fitness = agent.score as f32;
                             let idx = agent.row * 10 + agent.col;
@@ -434,8 +438,8 @@ async fn main() {
                             .iter()
                             .enumerate()
                             .max_by(|(_, a), (_, b)| {
-                                let sa = if a.alive { a.score } else { a.fitness as u32 };
-                                let sb = if b.alive { b.score } else { b.fitness as u32 };
+                                let sa = if a.alive { a.score } else { a.fitness as u128 };
+                                let sb = if b.alive { b.score } else { b.fitness as u128 };
                                 sa.cmp(&sb)
                             })
                             .map(|(i, _)| i)

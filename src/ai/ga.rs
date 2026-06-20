@@ -41,6 +41,42 @@ impl GeneticAlgorithm {
         }
     }
 
+    pub fn from_brain(brain_genes: &[f32]) -> Self {
+        let mut rng = rand::thread_rng();
+        let pop: Vec<Individual> = (0..POPULATION)
+            .map(|i| {
+                let genes = if i == 0 {
+                    // First individual is the saved brain untouched
+                    brain_genes.to_vec()
+                } else {
+                    // Rest are the saved brain with slight mutations
+                    brain_genes
+                        .iter()
+                        .map(|g| {
+                            let mut v = *g;
+                            if rng.gen_range(0.0..1.0) < MUTATION_RATE * 2.0 {
+                                v += rng.gen_range(-1.0..1.0) * MUTATION_STD;
+                                v = v.clamp(-5.0, 5.0);
+                            }
+                            v
+                        })
+                        .collect()
+                };
+                Individual {
+                    genes,
+                    fitness: 0.0,
+                }
+            })
+            .collect();
+        Self {
+            population: pop,
+            generation: 1,
+            current: 0,
+            best_fitness: 0.0,
+            avg_fitness: 0.0,
+        }
+    }
+
     pub fn best_network(&self) -> DinoNet<B> {
         let idx = self
             .population

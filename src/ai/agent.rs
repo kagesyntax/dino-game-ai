@@ -28,7 +28,7 @@ pub struct WorldAgent {
     pub on_ground: bool,
     pub alive: bool,
     pub network: DinoNet<B>,
-    pub score: u32,
+    pub score: u128,
     pub score_timer: f32,
     pub fitness: f32,
     pub ground_y: f32,
